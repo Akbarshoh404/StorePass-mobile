@@ -43,3 +43,15 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Firebase config — not a high-severity secret (it ships inside the built
+# app either way), but keep it out of the public repo by default rather
+# than committing it by accident via a broad `git add`.
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+macos/Runner/GoogleService-Info.plist
+
+# Signing keys — never commit these.
+*.jks
+*.keystore
+key.properties
