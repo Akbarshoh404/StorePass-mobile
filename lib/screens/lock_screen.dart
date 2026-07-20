@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../providers/lock_provider.dart';
 import '../widgets/brand_mark.dart';
+import 'pin_entry_screen.dart';
 
 class LockScreen extends StatefulWidget {
   const LockScreen({super.key});
@@ -17,6 +18,7 @@ class _LockScreenState extends State<LockScreen> {
   bool _usingPin = false;
   String _entered = '';
   String? _error;
+  final _shakeKey = GlobalKey<ShakeState>();
 
   @override
   void initState() {
@@ -42,14 +44,19 @@ class _LockScreenState extends State<LockScreen> {
 
   void _onDigit(String digit) {
     final lock = context.read<LockProvider>();
-    if (_entered.length >= 6) return;
+    if (_entered.length >= pinLength) return;
+    HapticFeedback.selectionClick();
     setState(() {
       _entered += digit;
       _error = null;
     });
-    if (_entered.length == 6) {
+    if (_entered.length == pinLength) {
       final ok = lock.unlockWithPin(_entered);
-      if (!ok) {
+      if (ok) {
+        HapticFeedback.mediumImpact();
+      } else {
+        HapticFeedback.heavyImpact();
+        _shakeKey.currentState?.shake();
         setState(() {
           _error = 'Incorrect passcode';
           _entered = '';
@@ -60,6 +67,7 @@ class _LockScreenState extends State<LockScreen> {
 
   void _onBackspace() {
     if (_entered.isEmpty) return;
+    HapticFeedback.selectionClick();
     setState(() => _entered = _entered.substring(0, _entered.length - 1));
   }
 
@@ -76,36 +84,32 @@ class _LockScreenState extends State<LockScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const BrandMark(),
-                    const SizedBox(height: 20),
-                    Text('Enter your passcode', style: theme.textTheme.titleMedium),
-                    const SizedBox(height: 20),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: List.generate(6, (i) {
-                        final filled = i < _entered.length;
-                        return Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 6),
-                          width: 14,
-                          height: 14,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: filled ? theme.colorScheme.onSurface : Colors.transparent,
-                            border: Border.all(color: theme.colorScheme.outline, width: 1.5),
-                          ),
-                        );
-                      }),
+                    const SizedBox(height: 24),
+                    Text('Enter Passcode', style: theme.textTheme.headlineSmall),
+                    const SizedBox(height: 28),
+                    Shake(
+                      key: _shakeKey,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: List.generate(pinLength, (i) => PinDot(filled: i < _entered.length)),
+                      ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 14),
                     SizedBox(
                       height: 20,
-                      child: _error != null
-                          ? Text(_error!, style: TextStyle(color: theme.colorScheme.error))
-                          : null,
+                      child: AnimatedOpacity(
+                        duration: const Duration(milliseconds: 150),
+                        opacity: _error != null ? 1 : 0,
+                        child: Text(
+                          _error ?? '',
+                          style: TextStyle(color: theme.colorScheme.error, fontWeight: FontWeight.w600),
+                        ),
+                      ),
                     ),
-                    const SizedBox(height: 12),
-                    _MiniKeypad(onDigit: _onDigit, onBackspace: _onBackspace),
+                    const SizedBox(height: 28),
+                    Keypad(onDigit: _onDigit, onBackspace: _onBackspace),
                     if (lock.enabled) ...[
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 16),
                       TextButton.icon(
                         onPressed: () {
                           setState(() => _usingPin = false);
@@ -123,7 +127,7 @@ class _LockScreenState extends State<LockScreen> {
                     const BrandMark(),
                     const SizedBox(height: 24),
                     Text('StorePass is locked', style: theme.textTheme.titleMedium),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 20),
                     FilledButton.icon(
                       onPressed: _authenticating ? null : _tryBiometrics,
                       icon: const Icon(Icons.fingerprint_rounded),
@@ -140,59 +144,6 @@ class _LockScreenState extends State<LockScreen> {
                 ),
         ),
       ),
-    );
-  }
-}
-
-class _MiniKeypad extends StatelessWidget {
-  final ValueChanged<String> onDigit;
-  final VoidCallback onBackspace;
-  const _MiniKeypad({required this.onDigit, required this.onBackspace});
-
-  @override
-  Widget build(BuildContext context) {
-    const rows = [
-      ['1', '2', '3'],
-      ['4', '5', '6'],
-      ['7', '8', '9'],
-      ['', '0', '⌫'],
-    ];
-    final theme = Theme.of(context);
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: rows
-          .map(
-            (row) => Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: row.map((key) {
-                if (key.isEmpty) return const SizedBox(width: 60, height: 60);
-                return Padding(
-                  padding: const EdgeInsets.all(4),
-                  child: Material(
-                    color: Colors.transparent,
-                    shape: const CircleBorder(),
-                    child: InkWell(
-                      customBorder: const CircleBorder(),
-                      onTap: () {
-                        HapticFeedback.selectionClick();
-                        key == '⌫' ? onBackspace() : onDigit(key);
-                      },
-                      child: SizedBox(
-                        width: 52,
-                        height: 52,
-                        child: Center(
-                          child: key == '⌫'
-                              ? Icon(Icons.backspace_outlined, size: 20, color: theme.colorScheme.onSurfaceVariant)
-                              : Text(key, style: theme.textTheme.titleLarge),
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-          )
-          .toList(),
     );
   }
 }

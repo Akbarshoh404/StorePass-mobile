@@ -9,9 +9,9 @@ class AppTheme {
   AppTheme._();
 
   static const _accentLight = Color(0xFF4F46E5);
-  static const _accentDark = Color(0xFF818CF8);
+  static const _accentDark = Color(0xFF7D7AFF); // iOS systemIndigo, dark mode
   static const _secondaryLight = Color(0xFF7C3AED);
-  static const _secondaryDark = Color(0xFFA78BFA);
+  static const _secondaryDark = Color(0xFFBF5AF2); // iOS systemPurple, dark mode
 
   static ThemeData light() => _build(_lightScheme);
   static ThemeData dark() => _build(_darkScheme);
@@ -49,32 +49,35 @@ class AppTheme {
     inversePrimary: _accentDark,
   );
 
+  // True-black "Apple ecosystem" dark mode — iOS system grays instead of the
+  // navy-tinted dark surfaces most SaaS products default to. Surfaces step
+  // up from pure black in iOS's own elevation increments (systemGray6→4).
   static const _darkScheme = ColorScheme(
     brightness: Brightness.dark,
     primary: _accentDark,
-    onPrimary: Color(0xFF1E1B4B),
-    primaryContainer: Color(0xFF2E2A5C),
+    onPrimary: Color(0xFF1B1B2E),
+    primaryContainer: Color(0xFF322E80),
     onPrimaryContainer: _accentDark,
     secondary: _secondaryDark,
-    onSecondary: Color(0xFF2E1065),
-    secondaryContainer: Color(0xFF2E2A5C),
+    onSecondary: Color(0xFF2E0F3D),
+    secondaryContainer: Color(0xFF4A1E63),
     onSecondaryContainer: _secondaryDark,
     tertiary: _accentDark,
-    onTertiary: Color(0xFF1E1B4B),
-    error: Color(0xFFF87171),
+    onTertiary: Color(0xFF1B1B2E),
+    error: Color(0xFFFF453A),
     onError: Color(0xFF450A0A),
     errorContainer: Color(0xFF3A1414),
-    onErrorContainer: Color(0xFFF87171),
-    surface: Color(0xFF0B1120),
-    onSurface: Color(0xFFF1F5F9),
-    surfaceContainerLowest: Color(0xFF08080C),
-    surfaceContainerLow: Color(0xFF131B2E),
-    surfaceContainer: Color(0xFF131B2E),
-    surfaceContainerHigh: Color(0xFF1B2540),
-    surfaceContainerHighest: Color(0xFF1B2540),
-    onSurfaceVariant: Color(0xFF94A3B8),
-    outline: Color(0xFF263047),
-    outlineVariant: Color(0xFF263047),
+    onErrorContainer: Color(0xFFFF453A),
+    surface: Color(0xFF000000),
+    onSurface: Color(0xFFFFFFFF),
+    surfaceContainerLowest: Color(0xFF000000),
+    surfaceContainerLow: Color(0xFF1C1C1E),
+    surfaceContainer: Color(0xFF1C1C1E),
+    surfaceContainerHigh: Color(0xFF2C2C2E),
+    surfaceContainerHighest: Color(0xFF3A3A3C),
+    onSurfaceVariant: Color(0xFF98989D),
+    outline: Color(0xFF38383A),
+    outlineVariant: Color(0xFF38383A),
     shadow: Color(0xFF000000),
     scrim: Color(0xFF000000),
     inverseSurface: Color(0xFFF5F5F7),
@@ -158,17 +161,17 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: scheme.surfaceContainer,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide(color: scheme.onSurface, width: 1.5),
         ),
-        errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: scheme.error)),
+        errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: scheme.error)),
         labelStyle: textTheme.bodyMedium,
         floatingLabelBehavior: FloatingLabelBehavior.auto,
         floatingLabelStyle: TextStyle(color: scheme.primary, fontWeight: FontWeight.w600),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: scheme.surface,

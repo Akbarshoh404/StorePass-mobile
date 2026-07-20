@@ -114,12 +114,24 @@ class _StatTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Card(
+    // Distinct from plain list/content cards — a soft accent tint marks this
+    // as a metric surface, matching the same treatment on web.
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [theme.colorScheme.primary.withValues(alpha: 0.14), theme.colorScheme.surfaceContainerLow],
+          stops: const [0, 0.65],
+        ),
+      ),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 16),
         child: Column(
           children: [
-            Text(value, style: theme.textTheme.titleLarge),
+            Text(value, style: theme.textTheme.titleLarge?.copyWith(color: theme.colorScheme.primary)),
             Text(label, style: theme.textTheme.bodySmall),
           ],
         ),

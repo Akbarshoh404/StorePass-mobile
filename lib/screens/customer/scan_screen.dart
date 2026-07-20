@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
@@ -7,6 +8,7 @@ import '../../models/claim_result.dart';
 import '../../models/transaction.dart';
 import '../../services/api_client.dart';
 import '../../utils/format.dart';
+import 'review_dialog.dart';
 
 class ScanScreen extends StatefulWidget {
   const ScanScreen({super.key});
@@ -36,17 +38,26 @@ class _ScanScreenState extends State<ScanScreen> {
     });
     try {
       final result = await context.read<ApiClient>().claimTransaction(token.trim());
-      if (mounted) _showResult(result);
+      HapticFeedback.mediumImpact();
+      if (mounted) await _showResult(result);
     } on ApiException catch (e) {
-      setState(() => _error = e.message);
+      HapticFeedback.heavyImpact();
+      if (mounted) setState(() => _error = e.message);
+    } catch (e) {
+      // Anything other than ApiException (an unexpected response shape, a
+      // parsing slip, etc.) must still surface *something* — silently
+      // falling through here is exactly the "nothing happens, no modal"
+      // failure mode this guards against.
+      HapticFeedback.heavyImpact();
+      if (mounted) setState(() => _error = 'Could not claim this code — try again.');
     } finally {
       if (mounted) setState(() => _claiming = false);
     }
   }
 
-  void _showResult(ClaimResult result) {
+  Future<void> _showResult(ClaimResult result) async {
     final isRedeem = result.kind == TxnKind.redeem;
-    showDialog(
+    await showDialog(
       context: context,
       builder: (context) => AlertDialog(
         icon: Icon(
@@ -76,6 +87,23 @@ class _ScanScreenState extends State<ScanScreen> {
         ],
       ),
     );
+
+    // Redeeming isn't a "visit" — only prompt for a rating after earning
+    // cashback, same as the web scan flow.
+    if (!isRedeem && mounted) {
+      final txn = Txn(
+        id: result.transactionId,
+        shopId: result.shopId,
+        shopName: result.shopName,
+        kind: TxnKind.earn,
+        amount: result.amount,
+        cashbackAmount: result.cashbackAmount,
+        status: TxnStatus.claimed,
+        createdAt: DateTime.now(),
+        hasReview: false,
+      );
+      await showReviewDialog(context, api: context.read<ApiClient>(), transaction: txn);
+    }
   }
 
   @override

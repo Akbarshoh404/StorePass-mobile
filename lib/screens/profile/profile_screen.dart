@@ -17,7 +17,7 @@ class ProfileScreen extends StatelessWidget {
     final auth = context.watch<AuthProvider>();
     final principal = auth.principal;
     final heroBg = Theme.of(context).brightness == Brightness.dark
-        ? const Color(0xFF0B0B10)
+        ? const Color(0xFF1C1C1E)
         : const Color(0xFF16161C);
 
     return Scaffold(

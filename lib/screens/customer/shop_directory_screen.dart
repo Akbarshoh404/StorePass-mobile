@@ -38,7 +38,7 @@ class ShopDirectoryScreenState extends State<ShopDirectoryScreen> {
   @override
   Widget build(BuildContext context) {
     final principal = context.watch<AuthProvider>().principal;
-    final bg = Theme.of(context).brightness == Brightness.dark ? const Color(0xFF0B0B10) : const Color(0xFF16161C);
+    final bg = Theme.of(context).brightness == Brightness.dark ? const Color(0xFF1C1C1E) : const Color(0xFF16161C);
 
     return Scaffold(
       body: RefreshIndicator(

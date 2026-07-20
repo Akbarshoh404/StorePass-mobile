@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../../models/principal.dart';
@@ -74,13 +75,26 @@ class _ShopDashboardScreenState extends State<ShopDashboardScreen> {
     try {
       final api = context.read<ApiClient>();
       final txn = _mode == _TxnMode.redeem ? await api.createRedemption(amount) : await api.createTransaction(amount);
+      HapticFeedback.mediumImpact();
       setState(() {
         _lastTxn = txn;
         _amountController.clear();
       });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_mode == _TxnMode.redeem ? 'Redeem QR ready' : 'QR ready — have the customer scan it'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
       _refreshAll();
     } on ApiException catch (e) {
+      HapticFeedback.heavyImpact();
       setState(() => _error = e.message);
+    } catch (e) {
+      HapticFeedback.heavyImpact();
+      setState(() => _error = 'Could not generate the QR code — try again.');
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -339,7 +353,7 @@ class _ShopHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bg = Theme.of(context).brightness == Brightness.dark ? const Color(0xFF0B0B10) : const Color(0xFF16161C);
+    final bg = Theme.of(context).brightness == Brightness.dark ? const Color(0xFF1C1C1E) : const Color(0xFF16161C);
     return Container(
       width: double.infinity,
       padding: EdgeInsets.fromLTRB(24, MediaQuery.of(context).padding.top + 20, 24, 28),
@@ -379,14 +393,26 @@ class _StatTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Card(
+    // Distinct from plain list/content cards — a soft accent tint marks this
+    // as a metric surface, matching the same treatment on web.
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [theme.colorScheme.primary.withValues(alpha: 0.14), theme.colorScheme.surfaceContainerLow],
+          stops: const [0, 0.65],
+        ),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(value, style: theme.textTheme.titleLarge),
+            Text(value, style: theme.textTheme.titleLarge?.copyWith(color: theme.colorScheme.primary)),
             const SizedBox(height: 2),
             Text(label, style: theme.textTheme.bodySmall, maxLines: 1, overflow: TextOverflow.ellipsis),
           ],
