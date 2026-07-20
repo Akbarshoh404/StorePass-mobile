@@ -7,6 +7,8 @@ class Review {
   final String? shopName;
   final int rating;
   final String? comment;
+  final String? shopReply;
+  final DateTime? shopReplyAt;
   final DateTime createdAt;
 
   Review({
@@ -17,6 +19,8 @@ class Review {
     this.shopName,
     required this.rating,
     this.comment,
+    this.shopReply,
+    this.shopReplyAt,
     required this.createdAt,
   });
 
@@ -28,6 +32,8 @@ class Review {
         shopName: json['shop_name'] as String?,
         rating: json['rating'] as int,
         comment: json['comment'] as String?,
+        shopReply: json['shop_reply'] as String?,
+        shopReplyAt: json['shop_reply_at'] != null ? DateTime.parse(json['shop_reply_at'] as String) : null,
         createdAt: DateTime.parse(json['created_at'] as String),
       );
 }

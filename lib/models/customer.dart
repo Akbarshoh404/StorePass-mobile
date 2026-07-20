@@ -6,6 +6,7 @@ class AdminCustomer {
   final DateTime createdAt;
   final double totalBalance;
   final int walletCount;
+  final bool isActive;
 
   AdminCustomer({
     required this.id,
@@ -14,6 +15,7 @@ class AdminCustomer {
     required this.createdAt,
     required this.totalBalance,
     required this.walletCount,
+    this.isActive = true,
   });
 
   factory AdminCustomer.fromJson(Map<String, dynamic> json) => AdminCustomer(
@@ -23,5 +25,6 @@ class AdminCustomer {
         createdAt: DateTime.parse(json['created_at'] as String),
         totalBalance: (json['total_balance'] as num).toDouble(),
         walletCount: json['wallet_count'] as int,
+        isActive: json['is_active'] as bool? ?? true,
       );
 }

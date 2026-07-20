@@ -33,6 +33,15 @@ class _AdminTransactionsTabState extends State<AdminTransactionsTab> {
     });
   }
 
+  Future<void> _voidTxn(Txn txn) async {
+    try {
+      await context.read<ApiClient>().admin.voidTransaction(txn.id);
+      _onShopChanged(_shopId);
+    } on ApiException catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -57,20 +66,34 @@ class _AdminTransactionsTabState extends State<AdminTransactionsTab> {
                   itemCount: txns.length,
                   itemBuilder: (context, i) {
                     final t = txns[i];
+                    final isRedeem = t.kind == TxnKind.redeem;
                     return Card(
                       child: ListTile(
                         leading: Icon(
-                          t.status == TxnStatus.claimed ? Icons.check_circle_rounded : Icons.schedule_rounded,
+                          t.status == TxnStatus.claimed
+                              ? Icons.check_circle_rounded
+                              : t.status == TxnStatus.voided
+                                  ? Icons.block_rounded
+                                  : Icons.schedule_rounded,
                           color: t.status == TxnStatus.claimed
                               ? Theme.of(context).colorScheme.onSurface
                               : Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                         title: Text('${t.shopName ?? '—'} · ${formatCurrency(t.amount)}'),
                         subtitle: Text('${t.customerName ?? 'Unclaimed'} · ${formatDate(t.createdAt)}'),
-                        trailing: Text(
-                          '+${formatCurrency(t.cashbackAmount)}',
-                          style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w600),
-                        ),
+                        trailing: t.status == TxnStatus.pending
+                            ? IconButton(
+                                icon: const Icon(Icons.close_rounded),
+                                tooltip: 'Void',
+                                onPressed: () => _voidTxn(t),
+                              )
+                            : Text(
+                                isRedeem ? '-${formatCurrency(t.amount)}' : '+${formatCurrency(t.cashbackAmount)}',
+                                style: TextStyle(
+                                  color: isRedeem ? Theme.of(context).colorScheme.error : Theme.of(context).colorScheme.primary,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                       ),
                     );
                   },

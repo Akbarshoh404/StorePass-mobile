@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../models/shop.dart';
+import '../../providers/auth_provider.dart';
 import '../../services/api_client.dart';
 import '../../utils/format.dart';
 import '../../widgets/shop_logo.dart';
@@ -36,50 +37,79 @@ class ShopDirectoryScreenState extends State<ShopDirectoryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final principal = context.watch<AuthProvider>().principal;
+    final bg = Theme.of(context).brightness == Brightness.dark ? const Color(0xFF0B0B10) : const Color(0xFF16161C);
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Shops'),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(56),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-            child: TextField(
-              decoration: const InputDecoration(
-                hintText: 'Search shops or categories',
-                prefixIcon: Icon(Icons.search_rounded),
-                isDense: true,
-              ),
-              onChanged: (v) => setState(() => _query = v.trim().toLowerCase()),
-            ),
-          ),
-        ),
-      ),
       body: RefreshIndicator(
         onRefresh: refresh,
-        child: FutureBuilder<List<Shop>>(
-          future: _future,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState != ConnectionState.done) return const LoadingView();
-            if (snapshot.hasError) {
-              return ErrorView(message: snapshot.error.toString(), onRetry: refresh);
-            }
-            var shops = snapshot.data ?? [];
-            if (_query.isNotEmpty) {
-              shops = shops
-                  .where((s) => s.name.toLowerCase().contains(_query) || s.category.toLowerCase().contains(_query))
-                  .toList();
-            }
-            if (shops.isEmpty) {
-              return const EmptyState(icon: Icons.storefront_outlined, title: 'No shops found');
-            }
-            return ListView.separated(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.all(16),
-              itemCount: shops.length,
-              separatorBuilder: (context, i) => const SizedBox(height: 12),
-              itemBuilder: (context, i) => _ShopCard(shop: shops[i]),
-            );
-          },
+        child: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(
+              child: Container(
+                width: double.infinity,
+                padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 20, 20, 24),
+                decoration: BoxDecoration(color: bg, borderRadius: const BorderRadius.vertical(bottom: Radius.circular(28))),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Hi, ${principal?.name.split(' ').first ?? 'there'}',
+                      style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w700),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Find a shop and start earning',
+                      style: TextStyle(color: Colors.white.withValues(alpha: 0.65), fontSize: 14),
+                    ),
+                    const SizedBox(height: 18),
+                    TextField(
+                      style: const TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
+                        hintText: 'Search shops or categories',
+                        hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
+                        prefixIcon: Icon(Icons.search_rounded, color: Colors.white.withValues(alpha: 0.7)),
+                        filled: true,
+                        fillColor: Colors.white.withValues(alpha: 0.1),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+                        isDense: true,
+                        contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                      onChanged: (v) => setState(() => _query = v.trim().toLowerCase()),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            FutureBuilder<List<Shop>>(
+              future: _future,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState != ConnectionState.done) {
+                  return const SliverFillRemaining(child: LoadingView());
+                }
+                if (snapshot.hasError) {
+                  return SliverFillRemaining(child: ErrorView(message: snapshot.error.toString(), onRetry: refresh));
+                }
+                var shops = snapshot.data ?? [];
+                if (_query.isNotEmpty) {
+                  shops = shops
+                      .where((s) => s.name.toLowerCase().contains(_query) || s.category.toLowerCase().contains(_query))
+                      .toList();
+                }
+                if (shops.isEmpty) {
+                  return const SliverFillRemaining(child: EmptyState(icon: Icons.storefront_outlined, title: 'No shops found'));
+                }
+                return SliverPadding(
+                  padding: const EdgeInsets.all(16),
+                  sliver: SliverList.separated(
+                    itemCount: shops.length,
+                    separatorBuilder: (context, i) => const SizedBox(height: 12),
+                    itemBuilder: (context, i) => _ShopCard(shop: shops[i]),
+                  ),
+                );
+              },
+            ),
+          ],
         ),
       ),
     );

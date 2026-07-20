@@ -146,24 +146,30 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> {
                       if (detail.myTransactions.isNotEmpty) ...[
                         Text('Your visits', style: theme.textTheme.titleMedium),
                         const SizedBox(height: 8),
-                        ...detail.myTransactions.map((t) => Card(
-                              child: ListTile(
-                                leading: Icon(
-                                  t.status == TxnStatus.claimed ? Icons.check_circle_rounded : Icons.schedule_rounded,
-                                  color: t.status == TxnStatus.claimed
-                                      ? theme.colorScheme.onSurface
-                                      : theme.colorScheme.onSurfaceVariant,
-                                ),
-                                title: Text(
-                                  '${formatCurrency(t.amount)} · +${formatCurrency(t.cashbackAmount)} back',
-                                  style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.primary),
-                                ),
-                                subtitle: Text(formatDate(t.claimedAt ?? t.createdAt)),
-                                trailing: (t.status == TxnStatus.claimed && !t.hasReview)
-                                    ? TextButton(onPressed: () => _leaveReview(t), child: const Text('Rate'))
-                                    : null,
+                        ...detail.myTransactions.map((t) {
+                          final isRedeem = t.kind == TxnKind.redeem;
+                          return Card(
+                            child: ListTile(
+                              leading: Icon(
+                                t.status == TxnStatus.claimed ? Icons.check_circle_rounded : Icons.schedule_rounded,
+                                color: t.status == TxnStatus.claimed
+                                    ? theme.colorScheme.onSurface
+                                    : theme.colorScheme.onSurfaceVariant,
                               ),
-                            )),
+                              title: Text(
+                                isRedeem
+                                    ? '-${formatCurrency(t.amount)} redeemed'
+                                    : '${formatCurrency(t.amount)} · +${formatCurrency(t.cashbackAmount)} back',
+                                style: theme.textTheme.bodyLarge
+                                    ?.copyWith(color: isRedeem ? theme.colorScheme.error : theme.colorScheme.primary),
+                              ),
+                              subtitle: Text(formatDate(t.claimedAt ?? t.createdAt)),
+                              trailing: (t.status == TxnStatus.claimed && !t.hasReview)
+                                  ? TextButton(onPressed: () => _leaveReview(t), child: const Text('Rate'))
+                                  : null,
+                            ),
+                          );
+                        }),
                         const SizedBox(height: 24),
                       ],
                       Text('Reviews', style: theme.textTheme.titleMedium),
@@ -193,6 +199,28 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> {
                                     ],
                                     const SizedBox(height: 4),
                                     Text(formatDate(r.createdAt), style: theme.textTheme.bodySmall),
+                                    if (r.shopReply != null) ...[
+                                      const SizedBox(height: 10),
+                                      Container(
+                                        width: double.infinity,
+                                        padding: const EdgeInsets.all(10),
+                                        decoration: BoxDecoration(
+                                          color: theme.colorScheme.surfaceContainer,
+                                          borderRadius: BorderRadius.circular(10),
+                                          border: Border(left: BorderSide(color: theme.colorScheme.primary, width: 3)),
+                                        ),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              'Shop reply',
+                                              style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.primary),
+                                            ),
+                                            Text(r.shopReply!),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
                                   ],
                                 ),
                               ),

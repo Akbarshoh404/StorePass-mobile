@@ -4,6 +4,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 
 import '../../models/claim_result.dart';
+import '../../models/transaction.dart';
 import '../../services/api_client.dart';
 import '../../utils/format.dart';
 
@@ -44,16 +45,25 @@ class _ScanScreenState extends State<ScanScreen> {
   }
 
   void _showResult(ClaimResult result) {
+    final isRedeem = result.kind == TxnKind.redeem;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        icon: Icon(Icons.celebration_outlined, color: Theme.of(context).colorScheme.primary, size: 36),
-        title: Text('Cashback earned at ${result.shopName}!'),
+        icon: Icon(
+          isRedeem ? Icons.redeem_rounded : Icons.celebration_outlined,
+          color: isRedeem ? Theme.of(context).colorScheme.error : Theme.of(context).colorScheme.primary,
+          size: 36,
+        ),
+        title: Text(isRedeem ? 'Redeemed at ${result.shopName}' : 'Cashback earned at ${result.shopName}!'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Purchase: ${formatCurrency(result.amount)}'),
-            Text('Cashback: +${formatCurrency(result.cashbackAmount)}'),
+            if (isRedeem)
+              Text('Redeemed: -${formatCurrency(result.amount)}')
+            else ...[
+              Text('Purchase: ${formatCurrency(result.amount)}'),
+              Text('Cashback: +${formatCurrency(result.cashbackAmount)}'),
+            ],
             const SizedBox(height: 8),
             Text(
               'New wallet balance: ${formatCurrency(result.walletBalance)}',

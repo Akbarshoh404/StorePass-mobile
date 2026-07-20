@@ -9,9 +9,11 @@ import '../models/customer.dart';
 import '../models/principal.dart';
 import '../models/review.dart';
 import '../models/shop.dart';
+import '../models/shop_analytics.dart';
 import '../models/shop_detail.dart';
 import '../models/transaction.dart';
 import '../models/wallet.dart';
+import '../models/wallet_entry.dart';
 
 class ApiException implements Exception {
   final String message;
@@ -194,9 +196,36 @@ class ApiClient {
     return data.map((e) => Review.fromJson(e as Map<String, dynamic>)).toList();
   }
 
+  // --- Shop self-service ---------------------------------------------------
+  Future<Shop> updateMyShop({
+    String? name,
+    String? category,
+    String? description,
+    String? logoUrl,
+    String? address,
+    String? phone,
+    String? hours,
+  }) async {
+    final data = await _send('PATCH', '/shops/me', form: {
+      'name': name,
+      'category': category,
+      'description': description,
+      'logo_url': logoUrl,
+      'address': address,
+      'phone': phone,
+      'hours': hours,
+    });
+    return Shop.fromJson(data as Map<String, dynamic>);
+  }
+
   // --- Transactions ------------------------------------------------------
   Future<Txn> createTransaction(double amount) async {
     final data = await _send('POST', '/transactions/create', form: {'amount': amount});
+    return Txn.fromJson(data as Map<String, dynamic>);
+  }
+
+  Future<Txn> createRedemption(double amount) async {
+    final data = await _send('POST', '/transactions/redeem', form: {'amount': amount});
     return Txn.fromJson(data as Map<String, dynamic>);
   }
 
@@ -205,6 +234,11 @@ class ApiClient {
   Future<ClaimResult> claimTransaction(String qrToken) async {
     final data = await _send('POST', '/transactions/claim', form: {'qr_token': qrToken});
     return ClaimResult.fromJson(data as Map<String, dynamic>);
+  }
+
+  Future<Txn> voidTransaction(int id) async {
+    final data = await _send('POST', '/transactions/$id/void');
+    return Txn.fromJson(data as Map<String, dynamic>);
   }
 
   Future<List<Txn>> myTransactions() async {
@@ -217,6 +251,11 @@ class ApiClient {
     return data.map((e) => Txn.fromJson(e as Map<String, dynamic>)).toList();
   }
 
+  Future<ShopAnalytics> shopAnalytics() async {
+    final data = await _send('GET', '/transactions/shop-mine/analytics');
+    return ShopAnalytics.fromJson(data as Map<String, dynamic>);
+  }
+
   // --- Reviews -------------------------------------------------------------
   Future<Review> createReview({required int transactionId, required int rating, String? comment}) async {
     final data = await _send('POST', '/reviews', form: {
@@ -227,10 +266,20 @@ class ApiClient {
     return Review.fromJson(data as Map<String, dynamic>);
   }
 
+  Future<Review> replyToReview(int id, String reply) async {
+    final data = await _send('POST', '/reviews/$id/reply', form: {'reply': reply});
+    return Review.fromJson(data as Map<String, dynamic>);
+  }
+
   // --- Wallets ---------------------------------------------------------
   Future<List<Wallet>> myWallets() async {
     final data = await _send('GET', '/wallets/mine') as List<dynamic>;
     return data.map((e) => Wallet.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  Future<List<WalletEntry>> walletEntries(int shopId) async {
+    final data = await _send('GET', '/wallets/$shopId/entries') as List<dynamic>;
+    return data.map((e) => WalletEntry.fromJson(e as Map<String, dynamic>)).toList();
   }
 }
 
@@ -299,6 +348,30 @@ class AdminApi {
   Future<List<AdminCustomer>> listCustomers() async {
     final data = await _client._send('GET', '/admin/customers') as List<dynamic>;
     return data.map((e) => AdminCustomer.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  Future<void> suspendCustomer(int id) => _client._send('POST', '/admin/customers/$id/suspend');
+
+  Future<void> reactivateCustomer(int id) => _client._send('POST', '/admin/customers/$id/reactivate');
+
+  Future<double> adjustWallet({
+    required int customerId,
+    required int shopId,
+    required double delta,
+    String? note,
+  }) async {
+    final data = await _client._send('POST', '/admin/wallets/adjust', form: {
+      'customer_id': customerId,
+      'shop_id': shopId,
+      'delta': delta,
+      'note': note,
+    });
+    return ((data as Map<String, dynamic>)['balance'] as num).toDouble();
+  }
+
+  Future<Txn> voidTransaction(int id) async {
+    final data = await _client._send('POST', '/admin/transactions/$id/void');
+    return Txn.fromJson(data as Map<String, dynamic>);
   }
 
   Future<List<Txn>> listTransactions({int? shopId}) async {
