@@ -32,11 +32,18 @@ class ApiClient {
   // down, no network) hangs the request forever — during app startup that
   // means the splash screen never resolves. Bounded timeouts guarantee
   // restore() always finishes one way or another.
+  //
+  // These are deliberately generous: the backend is a Vercel serverless
+  // function backed by a Neon database that both suspend after a period of
+  // inactivity, so the very first request after the app has been closed for
+  // a while can be a genuine cold start (function cold boot + database
+  // resume) on top of normal mobile network latency — tighter timeouts were
+  // flagging that as "unreachable" when it just needed a few more seconds.
   final Dio _dio = Dio(
     BaseOptions(
-      connectTimeout: const Duration(seconds: 10),
-      receiveTimeout: const Duration(seconds: 15),
-      sendTimeout: const Duration(seconds: 15),
+      connectTimeout: const Duration(seconds: 20),
+      receiveTimeout: const Duration(seconds: 30),
+      sendTimeout: const Duration(seconds: 20),
     ),
   );
   PersistCookieJar? _cookieJar;
@@ -99,9 +106,26 @@ class ApiClient {
   ApiException _toApiException(DioException e) {
     final response = e.response;
     if (response == null) {
-      return ApiException(
-        'Could not reach the StorePass API at ${config.baseUrl}. Is the backend running there?',
-      );
+      switch (e.type) {
+        case DioExceptionType.connectionTimeout:
+        case DioExceptionType.sendTimeout:
+        case DioExceptionType.receiveTimeout:
+          // The backend can be genuinely slow to wake up from a cold start —
+          // distinct from "unreachable" so a retry a few seconds later reads
+          // as the obvious next step rather than a dead end.
+          return ApiException(
+            'The StorePass server is taking a while to respond (it may be waking up). Please try again in a few seconds.',
+          );
+        case DioExceptionType.connectionError:
+        case DioExceptionType.unknown:
+          return ApiException(
+            'Could not reach the StorePass API. Check your internet connection and try again.',
+          );
+        default:
+          return ApiException(
+            'Could not reach the StorePass API at ${config.baseUrl}. Is the backend running there?',
+          );
+      }
     }
     final data = response.data;
     final detail = data is Map ? data['detail'] : null;
