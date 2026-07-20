@@ -1,11 +1,14 @@
+import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 import 'package:flutter/material.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/auth_provider.dart';
 import '../../services/api_client.dart';
 import '../../widgets/brand_mark.dart';
+import '../../widgets/google_mark.dart';
+import 'forgot_password_screen.dart';
 import 'register_screen.dart';
-import 'server_settings_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -19,6 +22,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _contactController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _submitting = false;
+  bool _googleSubmitting = false;
   String? _error;
 
   @override
@@ -46,20 +50,51 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  Future<void> _signInWithGoogle() async {
+    setState(() {
+      _error = null;
+      _googleSubmitting = true;
+    });
+    try {
+      // Native Google account picker → Google ID token...
+      final account = await GoogleSignIn.instance.authenticate();
+      final googleIdToken = account.authentication.idToken;
+      if (googleIdToken == null) {
+        throw Exception('Google did not return an ID token');
+      }
+      // ...exchanged for a Firebase ID token (same shape the backend already
+      // verifies for the web client) via signInWithCredential.
+      final credential = GoogleAuthProvider.credential(idToken: googleIdToken);
+      final userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
+      final firebaseIdToken = await userCredential.user?.getIdToken();
+      if (firebaseIdToken == null) {
+        throw Exception('Could not get a Firebase ID token');
+      }
+      if (!mounted) return;
+      await context.read<AuthProvider>().loginWithGoogle(firebaseIdToken);
+    } on GoogleSignInException catch (e) {
+      if (e.code == GoogleSignInExceptionCode.canceled) return;
+      setState(
+        () => _error = 'Could not sign in with Google '
+            '(${e.code.name}${e.description != null ? ': ${e.description}' : ''})',
+      );
+    } on FirebaseAuthException catch (e) {
+      setState(() => _error = 'Could not sign in with Google (${e.code}: ${e.message})');
+    } on ApiException catch (e) {
+      setState(() => _error = e.message);
+    } catch (e) {
+      // Deliberately showing the raw error here (not a generic message) —
+      // this is the fallback for whatever we haven't seen yet, and a vague
+      // "something went wrong" is useless for actually diagnosing it.
+      setState(() => _error = 'Could not sign in with Google (${e.runtimeType}: $e)');
+    } finally {
+      if (mounted) setState(() => _googleSubmitting = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        actions: [
-          IconButton(
-            tooltip: 'Server settings',
-            icon: const Icon(Icons.settings_ethernet_rounded),
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const ServerSettingsScreen()),
-            ),
-          ),
-        ],
-      ),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -79,6 +114,25 @@ class _LoginScreenState extends State<LoginScreen> {
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 32),
+                  OutlinedButton.icon(
+                    onPressed: (_googleSubmitting || _submitting) ? null : _signInWithGoogle,
+                    icon: _googleSubmitting
+                        ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                        : const GoogleMark(),
+                    label: const Text('Continue with Google'),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(child: Divider(color: Theme.of(context).colorScheme.outlineVariant)),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        child: Text('or', style: Theme.of(context).textTheme.bodySmall),
+                      ),
+                      Expanded(child: Divider(color: Theme.of(context).colorScheme.outlineVariant)),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
                   TextFormField(
                     controller: _contactController,
                     decoration: const InputDecoration(labelText: 'Phone or email'),
@@ -111,7 +165,13 @@ class _LoginScreenState extends State<LoginScreen> {
                           )
                         : const Text('Sign in'),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 8),
+                  TextButton(
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const ForgotPasswordScreen()),
+                    ),
+                    child: const Text('Forgot password?'),
+                  ),
                   TextButton(
                     onPressed: () => Navigator.of(context).push(
                       MaterialPageRoute(builder: (_) => const RegisterScreen()),

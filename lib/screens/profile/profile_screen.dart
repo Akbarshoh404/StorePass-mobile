@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/auth_provider.dart';
+import '../../providers/lock_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../services/api_client.dart';
 import '../auth/server_settings_screen.dart';
@@ -131,6 +132,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
               onSelectionChanged: (s) => context.read<ThemeProvider>().setMode(s.first),
             ),
           ),
+          if (context.watch<LockProvider>().supported)
+            SwitchListTile(
+              secondary: const Icon(Icons.fingerprint_rounded),
+              title: const Text('Require biometric unlock'),
+              subtitle: const Text('Lock the app when it goes to the background'),
+              value: context.watch<LockProvider>().enabled,
+              onChanged: (v) => context.read<LockProvider>().setEnabled(v),
+            ),
           ListTile(
             leading: const Icon(Icons.settings_ethernet_rounded),
             title: const Text('Server settings'),

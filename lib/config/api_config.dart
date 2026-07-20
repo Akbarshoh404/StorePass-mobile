@@ -1,21 +1,22 @@
-import 'dart:io' show Platform;
-
-import 'package:flutter/foundation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
 /// Holds the StorePass backend base URL as a single runtime variable.
 ///
 /// Resolution order:
 /// 1. A URL saved earlier via [setBaseUrl] (persisted in SharedPreferences) —
 ///    lets the app point at a different backend without a rebuild (handy
-///    since "localhost" means something different on an emulator vs. a
-///    physical device on the same Wi-Fi as the dev machine).
+///    for pointing a dev build at a local server instead of production).
 /// 2. `--dart-define=API_BASE_URL=...` passed at build/run time.
-/// 3. A sensible per-platform default matching the backend's dev server
-///    (`uvicorn main:app --reload` on port 8000).
+/// 3. The deployed production backend — this app talks to one real backend
+///    by default, not a local dev server, so it works out of the box on a
+///    real device with no manual setup.
+library;
+
+import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 class ApiConfig extends ChangeNotifier {
   static const _prefsKey = 'api_base_url';
   static const _dartDefine = String.fromEnvironment('API_BASE_URL');
+  static const _productionUrl = 'https://storepass.backend.akbarshoh-dev.uz';
 
   String _baseUrl = _defaultBaseUrl();
   bool _loaded = false;
@@ -25,11 +26,7 @@ class ApiConfig extends ChangeNotifier {
 
   static String _defaultBaseUrl() {
     if (_dartDefine.isNotEmpty) return _dartDefine;
-    if (!kIsWeb && Platform.isAndroid) {
-      // 10.0.2.2 is the Android emulator's alias for the host machine's localhost.
-      return 'http://10.0.2.2:8000';
-    }
-    return 'http://localhost:8000';
+    return _productionUrl;
   }
 
   Future<void> load() async {

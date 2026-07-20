@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 
 import '../../models/claim_result.dart';
@@ -99,10 +100,25 @@ class _ScanScreenState extends State<ScanScreen> {
                   errorBuilder: (context, error) => Center(
                     child: Padding(
                       padding: const EdgeInsets.all(24),
-                      child: Text(
-                        'Camera unavailable (${error.errorDetails?.message ?? error.errorCode}). '
-                        'Enter the code manually below.',
-                        textAlign: TextAlign.center,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            error.errorCode == MobileScannerErrorCode.permissionDenied
+                                ? 'Camera access was denied. Enable it in Settings to scan, '
+                                    'or enter the code manually below.'
+                                : 'Camera unavailable (${error.errorDetails?.message ?? error.errorCode}). '
+                                    'Enter the code manually below.',
+                            textAlign: TextAlign.center,
+                          ),
+                          if (error.errorCode == MobileScannerErrorCode.permissionDenied) ...[
+                            const SizedBox(height: 12),
+                            OutlinedButton(
+                              onPressed: openAppSettings,
+                              child: const Text('Open settings'),
+                            ),
+                          ],
+                        ],
                       ),
                     ),
                   ),

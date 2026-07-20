@@ -10,10 +10,23 @@ enum AuthStatus { unknown, signedOut, signedIn }
 /// against `/users/me`, so a returning user skips the login screen.
 class AuthProvider extends ChangeNotifier {
   final ApiClient _api;
-  AuthProvider(this._api);
+  AuthProvider(this._api) {
+    _api.onUnauthorized = _handleUnauthorized;
+  }
 
   AuthStatus status = AuthStatus.unknown;
   Principal? principal;
+
+  void _handleUnauthorized() {
+    // A 401 while already signed out (e.g. a failed login attempt) is just
+    // the normal "wrong credentials" case — only an expired session while
+    // we thought we were signed in should force the app back to login.
+    if (status == AuthStatus.signedIn) {
+      principal = null;
+      status = AuthStatus.signedOut;
+      notifyListeners();
+    }
+  }
 
   Future<void> restore() async {
     try {
@@ -34,6 +47,12 @@ class AuthProvider extends ChangeNotifier {
 
   Future<void> register({required String name, required String contact, required String password}) async {
     principal = await _api.register(name: name, contact: contact, password: password);
+    status = AuthStatus.signedIn;
+    notifyListeners();
+  }
+
+  Future<void> loginWithGoogle(String idToken) async {
+    principal = await _api.loginWithGoogle(idToken);
     status = AuthStatus.signedIn;
     notifyListeners();
   }

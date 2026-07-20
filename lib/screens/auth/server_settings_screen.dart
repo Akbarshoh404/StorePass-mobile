@@ -67,9 +67,11 @@ class _ServerSettingsScreenState extends State<ServerSettingsScreen> {
         padding: const EdgeInsets.all(20),
         children: [
           Text(
-            'Point the app at your StorePass backend. On an Android emulator, '
-            '"localhost" refers to the emulator itself — use 10.0.2.2 instead. '
-            'On a physical device, use your computer\'s LAN IP address.',
+            'The app already points at the production backend by default. '
+            'Only change this if you\'re testing against a local dev server — '
+            'on an Android emulator, "localhost" refers to the emulator itself '
+            '(use 10.0.2.2 instead); on a physical device, use your computer\'s '
+            'LAN IP address.',
             style: Theme.of(context).textTheme.bodySmall,
           ),
           const SizedBox(height: 20),

@@ -28,9 +28,24 @@ class ApiException implements Exception {
 /// browser's `credentials: include` behavior on the React frontend.
 class ApiClient {
   final ApiConfig config;
-  final Dio _dio = Dio();
+  // Without explicit timeouts, an unreachable backend (wrong URL, server
+  // down, no network) hangs the request forever — during app startup that
+  // means the splash screen never resolves. Bounded timeouts guarantee
+  // restore() always finishes one way or another.
+  final Dio _dio = Dio(
+    BaseOptions(
+      connectTimeout: const Duration(seconds: 10),
+      receiveTimeout: const Duration(seconds: 15),
+      sendTimeout: const Duration(seconds: 15),
+    ),
+  );
   PersistCookieJar? _cookieJar;
   late final AdminApi admin;
+
+  /// Called whenever a request comes back 401. Wired up by [AuthProvider] so
+  /// an expired session cookie bounces the whole app back to the login
+  /// screen instead of leaving every individual screen to show a raw error.
+  void Function()? onUnauthorized;
 
   ApiClient(this.config) {
     admin = AdminApi._(this);
@@ -66,6 +81,9 @@ class ApiClient {
       );
       return response.data;
     } on DioException catch (e) {
+      if (e.response?.statusCode == 401) {
+        onUnauthorized?.call();
+      }
       throw _toApiException(e);
     }
   }
@@ -107,6 +125,19 @@ class ApiClient {
   Future<void> logout() async {
     await _send('POST', '/auth/logout');
     await clearSession();
+  }
+
+  Future<Principal> loginWithGoogle(String idToken) async {
+    final data = await _send('POST', '/auth/google', form: {'id_token': idToken});
+    return Principal.fromJson(data as Map<String, dynamic>);
+  }
+
+  Future<void> forgotPassword(String contact) async {
+    await _send('POST', '/auth/forgot-password', form: {'contact': contact});
+  }
+
+  Future<void> resetPassword({required String token, required String password}) async {
+    await _send('POST', '/auth/reset-password', form: {'token': token, 'password': password});
   }
 
   Future<Principal> me() async {

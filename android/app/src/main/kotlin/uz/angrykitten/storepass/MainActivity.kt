@@ -1,5 +1,7 @@
 package uz.angrykitten.storepass
 
-import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.android.FlutterFragmentActivity
 
-class MainActivity : FlutterActivity()
+// FlutterFragmentActivity (not FlutterActivity) is required by local_auth's
+// Android biometric prompt implementation.
+class MainActivity : FlutterFragmentActivity()

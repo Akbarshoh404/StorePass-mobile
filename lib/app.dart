@@ -4,10 +4,12 @@ import 'package:provider/provider.dart';
 import 'config/api_config.dart';
 import 'models/principal.dart';
 import 'providers/auth_provider.dart';
+import 'providers/lock_provider.dart';
 import 'providers/theme_provider.dart';
 import 'screens/admin/admin_shell.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/customer/customer_shell.dart';
+import 'screens/lock_screen.dart';
 import 'screens/shop/shop_shell.dart';
 import 'screens/splash_screen.dart';
 import 'services/api_client.dart';
@@ -20,20 +22,23 @@ class StorePassApp extends StatefulWidget {
   State<StorePassApp> createState() => _StorePassAppState();
 }
 
-class _StorePassAppState extends State<StorePassApp> {
+class _StorePassAppState extends State<StorePassApp> with WidgetsBindingObserver {
   late final ApiConfig _apiConfig;
   late final ApiClient _apiClient;
   late final AuthProvider _authProvider;
   late final ThemeProvider _themeProvider;
+  late final LockProvider _lockProvider;
   late final Future<void> _bootstrap;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _apiConfig = ApiConfig();
     _apiClient = ApiClient(_apiConfig);
     _authProvider = AuthProvider(_apiClient);
     _themeProvider = ThemeProvider();
+    _lockProvider = LockProvider();
     _bootstrap = _init();
   }
 
@@ -41,7 +46,21 @@ class _StorePassAppState extends State<StorePassApp> {
     await _apiConfig.load();
     await _apiClient.init();
     await _themeProvider.load();
+    await _lockProvider.load();
     await _authProvider.restore();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      _lockProvider.lockIfEnabled();
+    }
   }
 
   @override
@@ -51,6 +70,7 @@ class _StorePassAppState extends State<StorePassApp> {
         ChangeNotifierProvider.value(value: _apiConfig),
         ChangeNotifierProvider.value(value: _authProvider),
         ChangeNotifierProvider.value(value: _themeProvider),
+        ChangeNotifierProvider.value(value: _lockProvider),
         Provider.value(value: _apiClient),
       ],
       child: Consumer<ThemeProvider>(
@@ -66,7 +86,10 @@ class _StorePassAppState extends State<StorePassApp> {
               if (snapshot.connectionState != ConnectionState.done) {
                 return const SplashScreen();
               }
-              return const _AuthGate();
+              return Consumer<LockProvider>(
+                builder: (context, lock, child) => lock.locked ? const LockScreen() : child!,
+                child: const _AuthGate(),
+              );
             },
           ),
         ),
