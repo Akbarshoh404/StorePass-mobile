@@ -1,46 +1,72 @@
+import 'dart:convert';
+
+import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Opt-in biometric re-lock: when enabled, backgrounding the app arms a lock
-/// that requires Face ID/Touch ID/fingerprint (or device PIN as a fallback)
-/// before the UI is shown again — worth it since the app displays wallet
-/// balances. Off by default, and only offerable on devices that support it.
+/// App re-lock on backgrounding: biometric (Face ID/Touch ID/fingerprint),
+/// a local PIN passcode, or both. Either one being set arms the lock — worth
+/// it since the app displays wallet balances. Off by default.
 class LockProvider extends ChangeNotifier {
-  static const _prefsKey = 'biometric_lock_enabled';
+  static const _biometricPrefsKey = 'biometric_lock_enabled';
+  static const _pinHashPrefsKey = 'app_pin_hash';
   final LocalAuthentication _auth = LocalAuthentication();
 
-  bool enabled = false;
+  bool enabled = false; // biometric
   bool locked = false;
-  bool supported = false;
+  bool biometricSupported = false;
+  String? _pinHash;
+
+  bool get pinSet => _pinHash != null;
+  bool get lockActive => enabled || pinSet;
 
   Future<void> load() async {
     final prefs = await SharedPreferences.getInstance();
-    enabled = prefs.getBool(_prefsKey) ?? false;
+    enabled = prefs.getBool(_biometricPrefsKey) ?? false;
+    _pinHash = prefs.getString(_pinHashPrefsKey);
     try {
-      supported = await _auth.isDeviceSupported();
+      biometricSupported = await _auth.isDeviceSupported();
     } catch (_) {
-      supported = false;
+      biometricSupported = false;
     }
-    if (!supported) enabled = false;
+    if (!biometricSupported) enabled = false;
     notifyListeners();
   }
 
   Future<void> setEnabled(bool value) async {
-    enabled = value && supported;
+    enabled = value && biometricSupported;
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_prefsKey, enabled);
+    await prefs.setBool(_biometricPrefsKey, enabled);
   }
 
+  Future<void> setPin(String pin) async {
+    final prefs = await SharedPreferences.getInstance();
+    _pinHash = _hash(pin);
+    await prefs.setString(_pinHashPrefsKey, _pinHash!);
+    notifyListeners();
+  }
+
+  Future<void> clearPin() async {
+    final prefs = await SharedPreferences.getInstance();
+    _pinHash = null;
+    await prefs.remove(_pinHashPrefsKey);
+    notifyListeners();
+  }
+
+  bool verifyPin(String pin) => _pinHash != null && _hash(pin) == _pinHash;
+
+  String _hash(String pin) => sha256.convert(utf8.encode(pin)).toString();
+
   void lockIfEnabled() {
-    if (enabled && !locked) {
+    if (lockActive && !locked) {
       locked = true;
       notifyListeners();
     }
   }
 
-  Future<bool> unlock() async {
+  Future<bool> unlockWithBiometrics() async {
     try {
       final ok = await _auth.authenticate(
         localizedReason: 'Unlock StorePass',
@@ -54,5 +80,12 @@ class LockProvider extends ChangeNotifier {
     } catch (_) {
       return false;
     }
+  }
+
+  bool unlockWithPin(String pin) {
+    if (!verifyPin(pin)) return false;
+    locked = false;
+    notifyListeners();
+    return true;
   }
 }

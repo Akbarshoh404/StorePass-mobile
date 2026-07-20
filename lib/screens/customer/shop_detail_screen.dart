@@ -92,6 +92,25 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> {
                         const SizedBox(height: 12),
                         Text(shop.description, style: theme.textTheme.bodyMedium),
                       ],
+                      if ([shop.address, shop.phone, shop.hours].any((v) => v != null && v.isNotEmpty)) ...[
+                        const SizedBox(height: 16),
+                        Card(
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (shop.address != null && shop.address!.isNotEmpty)
+                                  _InfoRow(icon: Icons.place_outlined, text: shop.address!),
+                                if (shop.phone != null && shop.phone!.isNotEmpty)
+                                  _InfoRow(icon: Icons.call_outlined, text: shop.phone!),
+                                if (shop.hours != null && shop.hours!.isNotEmpty)
+                                  _InfoRow(icon: Icons.schedule_outlined, text: shop.hours!, isLast: true),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 12),
                       Row(
                         children: [
@@ -185,6 +204,29 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class _InfoRow extends StatelessWidget {
+  final IconData icon;
+  final String text;
+  final bool isLast;
+  const _InfoRow({required this.icon, required this.text, this.isLast = false});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: EdgeInsets.only(bottom: isLast ? 0 : 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 18, color: theme.colorScheme.onSurfaceVariant),
+          const SizedBox(width: 10),
+          Expanded(child: Text(text, style: theme.textTheme.bodyMedium)),
+        ],
       ),
     );
   }

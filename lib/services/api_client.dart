@@ -145,8 +145,12 @@ class ApiClient {
     return Principal.fromJson(data as Map<String, dynamic>);
   }
 
-  Future<Principal> updateMe({String? name, String? password}) async {
-    final data = await _send('PUT', '/users/me', form: {'name': name, 'password': password});
+  Future<Principal> updateMe({String? name, String? password, String? currentPassword}) async {
+    final data = await _send(
+      'PUT',
+      '/users/me',
+      form: {'name': name, 'password': password, 'current_password': currentPassword},
+    );
     return Principal.fromJson(data as Map<String, dynamic>);
   }
 
@@ -217,6 +221,9 @@ class AdminApi {
     required String password,
     String description = '',
     String? logoUrl,
+    String? address,
+    String? phone,
+    String? hours,
     double? cashbackRate,
   }) async {
     final data = await _client._send('POST', '/admin/shops', form: {
@@ -226,6 +233,9 @@ class AdminApi {
       'password': password,
       'description': description,
       'logo_url': logoUrl,
+      'address': address,
+      'phone': phone,
+      'hours': hours,
       'cashback_rate': cashbackRate,
     });
     return Shop.fromJson(data as Map<String, dynamic>);
@@ -237,6 +247,9 @@ class AdminApi {
     String? category,
     String? description,
     String? logoUrl,
+    String? address,
+    String? phone,
+    String? hours,
     double? cashbackRate,
     bool? isActive,
   }) async {
@@ -245,6 +258,9 @@ class AdminApi {
       'category': category,
       'description': description,
       'logo_url': logoUrl,
+      'address': address,
+      'phone': phone,
+      'hours': hours,
       'cashback_rate': cashbackRate,
       'is_active': isActive,
     });

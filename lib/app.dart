@@ -43,7 +43,6 @@ class _StorePassAppState extends State<StorePassApp> with WidgetsBindingObserver
   }
 
   Future<void> _init() async {
-    await _apiConfig.load();
     await _apiClient.init();
     await _themeProvider.load();
     await _lockProvider.load();

@@ -57,8 +57,8 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> updateProfile({String? name, String? password}) async {
-    principal = await _api.updateMe(name: name, password: password);
+  Future<void> updateProfile({String? name, String? password, String? currentPassword}) async {
+    principal = await _api.updateMe(name: name, password: password, currentPassword: currentPassword);
     notifyListeners();
   }
 

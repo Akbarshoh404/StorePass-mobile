@@ -1,57 +1,18 @@
 /// Holds the StorePass backend base URL as a single runtime variable.
 ///
 /// Resolution order:
-/// 1. A URL saved earlier via [setBaseUrl] (persisted in SharedPreferences) —
-///    lets the app point at a different backend without a rebuild (handy
-///    for pointing a dev build at a local server instead of production).
-/// 2. `--dart-define=API_BASE_URL=...` passed at build/run time.
-/// 3. The deployed production backend — this app talks to one real backend
+/// 1. `--dart-define=API_BASE_URL=...` passed at build/run time — for
+///    pointing a local dev build at a local server.
+/// 2. The deployed production backend — this app talks to one real backend
 ///    by default, not a local dev server, so it works out of the box on a
-///    real device with no manual setup.
+///    real device with no manual setup and no in-app override to go stale.
 library;
 
 import 'package:flutter/foundation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiConfig extends ChangeNotifier {
-  static const _prefsKey = 'api_base_url';
   static const _dartDefine = String.fromEnvironment('API_BASE_URL');
   static const _productionUrl = 'https://storepass.backend.akbarshoh-dev.uz';
 
-  String _baseUrl = _defaultBaseUrl();
-  bool _loaded = false;
-
-  String get baseUrl => _baseUrl;
-  bool get loaded => _loaded;
-
-  static String _defaultBaseUrl() {
-    if (_dartDefine.isNotEmpty) return _dartDefine;
-    return _productionUrl;
-  }
-
-  Future<void> load() async {
-    final prefs = await SharedPreferences.getInstance();
-    final saved = prefs.getString(_prefsKey);
-    if (saved != null && saved.isNotEmpty) {
-      _baseUrl = saved;
-    }
-    _loaded = true;
-    notifyListeners();
-  }
-
-  Future<void> setBaseUrl(String url) async {
-    final trimmed = url.trim().replaceAll(RegExp(r'/+$'), '');
-    if (trimmed.isEmpty || trimmed == _baseUrl) return;
-    _baseUrl = trimmed;
-    notifyListeners();
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_prefsKey, trimmed);
-  }
-
-  Future<void> resetToDefault() async {
-    _baseUrl = _defaultBaseUrl();
-    notifyListeners();
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_prefsKey);
-  }
+  final String baseUrl = _dartDefine.isNotEmpty ? _dartDefine : _productionUrl;
 }

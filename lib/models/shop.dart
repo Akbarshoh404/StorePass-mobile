@@ -6,6 +6,9 @@ class Shop {
   final String category;
   final String description;
   final String? logoUrl;
+  final String? address;
+  final String? phone;
+  final String? hours;
   final double cashbackRate;
   final bool? isActive;
   final double? averageRating;
@@ -24,6 +27,9 @@ class Shop {
     required this.category,
     required this.description,
     this.logoUrl,
+    this.address,
+    this.phone,
+    this.hours,
     required this.cashbackRate,
     this.isActive,
     this.averageRating,
@@ -41,6 +47,9 @@ class Shop {
         category: json['category'] as String,
         description: json['description'] as String? ?? '',
         logoUrl: json['logo_url'] as String?,
+        address: json['address'] as String?,
+        phone: json['phone'] as String?,
+        hours: json['hours'] as String?,
         cashbackRate: (json['cashback_rate'] as num).toDouble(),
         isActive: json['is_active'] as bool?,
         averageRating: (json['average_rating'] as num?)?.toDouble(),

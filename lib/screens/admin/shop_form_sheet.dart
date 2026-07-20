@@ -31,6 +31,9 @@ class _CreateShopFormState extends State<_CreateShopForm> {
   final _password = TextEditingController();
   final _description = TextEditingController();
   final _logoUrl = TextEditingController();
+  final _address = TextEditingController();
+  final _phone = TextEditingController();
+  final _hours = TextEditingController();
   final _rate = TextEditingController(text: '1');
   bool _submitting = false;
   String? _error;
@@ -43,6 +46,9 @@ class _CreateShopFormState extends State<_CreateShopForm> {
     _password.dispose();
     _description.dispose();
     _logoUrl.dispose();
+    _address.dispose();
+    _phone.dispose();
+    _hours.dispose();
     _rate.dispose();
     super.dispose();
   }
@@ -66,6 +72,9 @@ class _CreateShopFormState extends State<_CreateShopForm> {
         password: _password.text,
         description: _description.text.trim(),
         logoUrl: _logoUrl.text.trim().isEmpty ? null : _logoUrl.text.trim(),
+        address: _address.text.trim().isEmpty ? null : _address.text.trim(),
+        phone: _phone.text.trim().isEmpty ? null : _phone.text.trim(),
+        hours: _hours.text.trim().isEmpty ? null : _hours.text.trim(),
         cashbackRate: rate / 100,
       );
       if (mounted) Navigator.of(context).pop(true);
@@ -133,6 +142,22 @@ class _CreateShopFormState extends State<_CreateShopForm> {
                 controller: _logoUrl,
                 decoration: const InputDecoration(labelText: 'Logo URL (optional)'),
                 keyboardType: TextInputType.url,
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _address,
+                decoration: const InputDecoration(labelText: 'Address (optional)'),
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _phone,
+                decoration: const InputDecoration(labelText: 'Phone (optional)'),
+                keyboardType: TextInputType.phone,
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _hours,
+                decoration: const InputDecoration(labelText: 'Hours (optional)', hintText: 'Mon–Fri 9–6'),
               ),
               if (_error != null) ...[
                 const SizedBox(height: 12),
