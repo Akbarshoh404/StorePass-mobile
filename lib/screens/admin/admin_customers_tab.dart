@@ -57,6 +57,18 @@ class _AdminCustomersTabState extends State<AdminCustomersTab> {
     if (adjusted == true) _refresh();
   }
 
+  Future<void> _editCustomer(AdminCustomer c) async {
+    final saved = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+        child: _EditCustomerSheet(customer: c),
+      ),
+    );
+    if (saved == true) _refresh();
+  }
+
   @override
   Widget build(BuildContext context) {
     return RefreshIndicator(
@@ -105,6 +117,10 @@ class _AdminCustomersTabState extends State<AdminCustomersTab> {
                                   : Theme.of(context).colorScheme.errorContainer,
                             ),
                             const Spacer(),
+                            TextButton(
+                              onPressed: () => _editCustomer(c),
+                              child: const Text('Edit'),
+                            ),
                             TextButton(
                               onPressed: () => _adjustWallet(c),
                               child: const Text('Adjust balance'),
@@ -216,6 +232,76 @@ class _AdjustWalletSheetState extends State<_AdjustWalletSheet> {
             child: _submitting
                 ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
                 : const Text('Apply adjustment'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EditCustomerSheet extends StatefulWidget {
+  final AdminCustomer customer;
+  const _EditCustomerSheet({required this.customer});
+
+  @override
+  State<_EditCustomerSheet> createState() => _EditCustomerSheetState();
+}
+
+class _EditCustomerSheetState extends State<_EditCustomerSheet> {
+  late final _name = TextEditingController(text: widget.customer.name);
+  late final _contact = TextEditingController(text: widget.customer.contact);
+  bool _submitting = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _name.dispose();
+    _contact.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    setState(() {
+      _submitting = true;
+      _error = null;
+    });
+    try {
+      await context.read<ApiClient>().admin.updateCustomer(
+            widget.customer.id,
+            name: _name.text.trim(),
+            contact: _contact.text.trim(),
+          );
+      if (mounted) Navigator.of(context).pop(true);
+    } on ApiException catch (e) {
+      setState(() => _error = e.message);
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text('Edit ${widget.customer.name}', style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 16),
+          TextField(controller: _name, decoration: const InputDecoration(labelText: 'Name')),
+          const SizedBox(height: 12),
+          TextField(controller: _contact, decoration: const InputDecoration(labelText: 'Contact (email/phone)')),
+          if (_error != null) ...[
+            const SizedBox(height: 12),
+            Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+          ],
+          const SizedBox(height: 16),
+          FilledButton(
+            onPressed: _submitting ? null : _submit,
+            child: _submitting
+                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                : const Text('Save changes'),
           ),
         ],
       ),

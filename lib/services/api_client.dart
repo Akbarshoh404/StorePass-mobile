@@ -318,6 +318,7 @@ class AdminApi {
     int id, {
     String? name,
     String? category,
+    String? contact,
     String? description,
     String? logoUrl,
     String? address,
@@ -329,6 +330,7 @@ class AdminApi {
     final data = await _client._send('PATCH', '/admin/shops/$id', form: {
       'name': name,
       'category': category,
+      'contact': contact,
       'description': description,
       'logo_url': logoUrl,
       'address': address,
@@ -349,6 +351,12 @@ class AdminApi {
     final data = await _client._send('GET', '/admin/customers') as List<dynamic>;
     return data.map((e) => AdminCustomer.fromJson(e as Map<String, dynamic>)).toList();
   }
+
+  // Returns the bare {id, name, contact, is_active, created_at} shape, not a
+  // full AdminCustomer (no total_balance/wallet_count) — callers refresh the
+  // list afterward rather than trying to patch those stats in locally.
+  Future<void> updateCustomer(int id, {String? name, String? contact}) =>
+      _client._send('PATCH', '/admin/customers/$id', form: {'name': name, 'contact': contact});
 
   Future<void> suspendCustomer(int id) => _client._send('POST', '/admin/customers/$id/suspend');
 
