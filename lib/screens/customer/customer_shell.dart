@@ -15,12 +15,24 @@ class CustomerShell extends StatefulWidget {
 class _CustomerShellState extends State<CustomerShell> {
   int _index = 0;
 
-  static const _tabs = [
-    ShopDirectoryScreen(),
-    MyWalletsScreen(),
-    ScanScreen(),
-    ProfileScreen(),
+  final _shopsKey = GlobalKey<ShopDirectoryScreenState>();
+  final _walletsKey = GlobalKey<MyWalletsScreenState>();
+
+  late final _tabs = [
+    ShopDirectoryScreen(key: _shopsKey),
+    MyWalletsScreen(key: _walletsKey),
+    const ScanScreen(),
+    const ProfileScreen(),
   ];
+
+  void _onDestinationSelected(int i) {
+    setState(() => _index = i);
+    // IndexedStack keeps every tab's State alive, so initState() only runs
+    // once — switching back to Shops/Wallets after a scan on another tab
+    // would otherwise keep showing whatever was fetched on first visit.
+    if (i == 0) _shopsKey.currentState?.refresh();
+    if (i == 1) _walletsKey.currentState?.refresh();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +40,7 @@ class _CustomerShellState extends State<CustomerShell> {
       body: IndexedStack(index: _index, children: _tabs),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
-        onDestinationSelected: (i) => setState(() => _index = i),
+        onDestinationSelected: _onDestinationSelected,
         destinations: const [
           NavigationDestination(icon: Icon(Icons.storefront_outlined), selectedIcon: Icon(Icons.storefront_rounded), label: 'Shops'),
           NavigationDestination(icon: Icon(Icons.account_balance_wallet_outlined), selectedIcon: Icon(Icons.account_balance_wallet_rounded), label: 'Wallets'),

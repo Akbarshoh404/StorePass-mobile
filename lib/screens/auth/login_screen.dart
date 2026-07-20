@@ -9,6 +9,7 @@ import '../../widgets/brand_mark.dart';
 import '../../widgets/google_mark.dart';
 import 'forgot_password_screen.dart';
 import 'register_screen.dart';
+import 'server_settings_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -150,6 +151,19 @@ class _LoginScreenState extends State<LoginScreen> {
                   if (_error != null) ...[
                     const SizedBox(height: 12),
                     Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                    if (_error!.contains('Could not reach')) ...[
+                      const SizedBox(height: 4),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: TextButton(
+                          style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: Size.zero),
+                          onPressed: () => Navigator.of(context).push(
+                            MaterialPageRoute(builder: (_) => const ServerSettingsScreen()),
+                          ),
+                          child: const Text('Check server settings →'),
+                        ),
+                      ),
+                    ],
                   ],
                   const SizedBox(height: 20),
                   FilledButton(

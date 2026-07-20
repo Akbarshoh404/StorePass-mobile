@@ -30,6 +30,7 @@ class _CreateShopFormState extends State<_CreateShopForm> {
   final _contact = TextEditingController();
   final _password = TextEditingController();
   final _description = TextEditingController();
+  final _logoUrl = TextEditingController();
   final _rate = TextEditingController(text: '1');
   bool _submitting = false;
   String? _error;
@@ -41,6 +42,7 @@ class _CreateShopFormState extends State<_CreateShopForm> {
     _contact.dispose();
     _password.dispose();
     _description.dispose();
+    _logoUrl.dispose();
     _rate.dispose();
     super.dispose();
   }
@@ -63,6 +65,7 @@ class _CreateShopFormState extends State<_CreateShopForm> {
         contact: _contact.text.trim(),
         password: _password.text,
         description: _description.text.trim(),
+        logoUrl: _logoUrl.text.trim().isEmpty ? null : _logoUrl.text.trim(),
         cashbackRate: rate / 100,
       );
       if (mounted) Navigator.of(context).pop(true);
@@ -124,6 +127,12 @@ class _CreateShopFormState extends State<_CreateShopForm> {
                 controller: _description,
                 decoration: const InputDecoration(labelText: 'Description (optional)'),
                 maxLines: 2,
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _logoUrl,
+                decoration: const InputDecoration(labelText: 'Logo URL (optional)'),
+                keyboardType: TextInputType.url,
               ),
               if (_error != null) ...[
                 const SizedBox(height: 12),

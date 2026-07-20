@@ -11,10 +11,10 @@ class MyWalletsScreen extends StatefulWidget {
   const MyWalletsScreen({super.key});
 
   @override
-  State<MyWalletsScreen> createState() => _MyWalletsScreenState();
+  State<MyWalletsScreen> createState() => MyWalletsScreenState();
 }
 
-class _MyWalletsScreenState extends State<MyWalletsScreen> {
+class MyWalletsScreenState extends State<MyWalletsScreen> {
   late Future<List<Wallet>> _future;
 
   @override
@@ -23,7 +23,7 @@ class _MyWalletsScreenState extends State<MyWalletsScreen> {
     _future = context.read<ApiClient>().myWallets();
   }
 
-  Future<void> _refresh() async {
+  Future<void> refresh() async {
     final future = context.read<ApiClient>().myWallets();
     setState(() => _future = future);
     await future;
@@ -34,12 +34,12 @@ class _MyWalletsScreenState extends State<MyWalletsScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('My wallets')),
       body: RefreshIndicator(
-        onRefresh: _refresh,
+        onRefresh: refresh,
         child: FutureBuilder<List<Wallet>>(
           future: _future,
           builder: (context, snapshot) {
             if (snapshot.connectionState != ConnectionState.done) return const LoadingView();
-            if (snapshot.hasError) return ErrorView(message: snapshot.error.toString(), onRetry: _refresh);
+            if (snapshot.hasError) return ErrorView(message: snapshot.error.toString(), onRetry: refresh);
             final wallets = snapshot.data ?? [];
             if (wallets.isEmpty) {
               return const EmptyState(

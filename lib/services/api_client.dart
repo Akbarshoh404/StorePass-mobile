@@ -216,6 +216,7 @@ class AdminApi {
     required String contact,
     required String password,
     String description = '',
+    String? logoUrl,
     double? cashbackRate,
   }) async {
     final data = await _client._send('POST', '/admin/shops', form: {
@@ -224,6 +225,7 @@ class AdminApi {
       'contact': contact,
       'password': password,
       'description': description,
+      'logo_url': logoUrl,
       'cashback_rate': cashbackRate,
     });
     return Shop.fromJson(data as Map<String, dynamic>);
@@ -234,6 +236,7 @@ class AdminApi {
     String? name,
     String? category,
     String? description,
+    String? logoUrl,
     double? cashbackRate,
     bool? isActive,
   }) async {
@@ -241,6 +244,7 @@ class AdminApi {
       'name': name,
       'category': category,
       'description': description,
+      'logo_url': logoUrl,
       'cashback_rate': cashbackRate,
       'is_active': isActive,
     });

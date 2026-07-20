@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../models/shop.dart';
 import '../../services/api_client.dart';
 import '../../utils/format.dart';
+import '../../widgets/shop_logo.dart';
 import '../../widgets/star_rating.dart';
 import '../../widgets/states.dart';
 import 'shop_detail_screen.dart';
@@ -12,10 +13,10 @@ class ShopDirectoryScreen extends StatefulWidget {
   const ShopDirectoryScreen({super.key});
 
   @override
-  State<ShopDirectoryScreen> createState() => _ShopDirectoryScreenState();
+  State<ShopDirectoryScreen> createState() => ShopDirectoryScreenState();
 }
 
-class _ShopDirectoryScreenState extends State<ShopDirectoryScreen> {
+class ShopDirectoryScreenState extends State<ShopDirectoryScreen> {
   late Future<List<Shop>> _future;
   String _query = '';
 
@@ -27,7 +28,7 @@ class _ShopDirectoryScreenState extends State<ShopDirectoryScreen> {
 
   Future<List<Shop>> _load() => context.read<ApiClient>().listShops();
 
-  Future<void> _refresh() async {
+  Future<void> refresh() async {
     final future = _load();
     setState(() => _future = future);
     await future;
@@ -54,13 +55,13 @@ class _ShopDirectoryScreenState extends State<ShopDirectoryScreen> {
         ),
       ),
       body: RefreshIndicator(
-        onRefresh: _refresh,
+        onRefresh: refresh,
         child: FutureBuilder<List<Shop>>(
           future: _future,
           builder: (context, snapshot) {
             if (snapshot.connectionState != ConnectionState.done) return const LoadingView();
             if (snapshot.hasError) {
-              return ErrorView(message: snapshot.error.toString(), onRetry: _refresh);
+              return ErrorView(message: snapshot.error.toString(), onRetry: refresh);
             }
             var shops = snapshot.data ?? [];
             if (_query.isNotEmpty) {
@@ -105,8 +106,16 @@ class _ShopCard extends StatelessWidget {
             children: [
               Row(
                 children: [
+                  ShopLogo(logoUrl: shop.logoUrl),
+                  const SizedBox(width: 12),
                   Expanded(
-                    child: Text(shop.name, style: theme.textTheme.titleMedium),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(shop.name, style: theme.textTheme.titleMedium),
+                        Text(shop.category, style: theme.textTheme.bodySmall),
+                      ],
+                    ),
                   ),
                   Text(
                     '${formatPercent(shop.cashbackRate)} back',
@@ -114,8 +123,15 @@ class _ShopCard extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 4),
-              Text(shop.category, style: theme.textTheme.bodySmall),
+              if (shop.description.isNotEmpty) ...[
+                const SizedBox(height: 10),
+                Text(
+                  shop.description,
+                  style: theme.textTheme.bodySmall,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
               const SizedBox(height: 8),
               Row(
                 children: [

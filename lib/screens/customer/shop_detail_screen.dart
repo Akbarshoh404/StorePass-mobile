@@ -6,6 +6,7 @@ import '../../models/shop_detail.dart';
 import '../../models/transaction.dart';
 import '../../services/api_client.dart';
 import '../../utils/format.dart';
+import '../../widgets/shop_logo.dart';
 import '../../widgets/star_rating.dart';
 import '../../widgets/states.dart';
 import 'review_dialog.dart';
@@ -73,9 +74,18 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> {
                     delegate: SliverChildListDelegate([
                       Row(
                         children: [
-                          Chip(label: Text(shop.category)),
-                          const SizedBox(width: 8),
-                          Chip(label: Text('${formatPercent(shop.cashbackRate)} cashback')),
+                          ShopLogo(logoUrl: shop.logoUrl, size: 56),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: [
+                                Chip(label: Text(shop.category)),
+                                Chip(label: Text('${formatPercent(shop.cashbackRate)} cashback')),
+                              ],
+                            ),
+                          ),
                         ],
                       ),
                       if (shop.description.isNotEmpty) ...[
